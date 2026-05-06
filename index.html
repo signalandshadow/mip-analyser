@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIP Analyser · Signal &amp; Shadow</title>
+<meta name="description" content="Signal & Shadow's Media Integrity Protocol Analyser. Structure media verification findings into a dossier-ready MIP report. Signed, dated, sourced under LST-001.">
+<meta property="og:title" content="MIP Analyser · Signal &amp; Shadow">
+<meta property="og:description" content="Structure media verification findings into a dossier-ready MIP report. Signed, dated, sourced under LST-001.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Surface */
+    --bg: #0A0E14;
+    --bg-elev: #0F141C;
+    --bg-card: #131923;
+    --bg-card-hover: #18202D;
+    --line: #1F2937;
+    --line-bright: #2D3B4F;
+
+    /* Ink */
+    --ink: #E8EBF0;
+    --ink-soft: #B0B8C5;
+    --ink-faint: #6B7888;
+    --ink-mute: #4A5564;
+
+    /* Brand */
+    --navy: #2A1B3D;
+    --teal: #32BB93;
+    --teal-bright: #4DD9AE;
+    --teal-deep: #1F8F6E;
+    --teal-tint: rgba(50, 187, 147, 0.12);
+    --teal-glow: rgba(50, 187, 147, 0.15);
+
+    /* Status */
+    --amber: #E89D3C;
+    --rust: #C24914;
+    --vermillion: #D14242;
+
+    /* Type */
+    --sans: 'Geist', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, 'Courier New', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  a { color: inherit; text-decoration: none; transition: color 0.15s; }
+  a:hover { color: var(--teal); }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+  .narrow { max-width: 760px; margin: 0 auto; padding: 0 32px; }
+
+  /* ============ STATUS BAR ============ */
+  .status-bar {
+    background: var(--bg-elev);
+    border-bottom: 0.5px solid var(--line);
+    padding: 10px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .status-bar .row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 24px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+  .status-id { color: var(--teal); font-weight: 600; letter-spacing: 0.16em; }
+  .status-meta { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .dot-sep { color: var(--ink-mute); }
+  .status-pulse {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--teal);
+  }
+  .pulse-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--teal);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--teal);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* ============ HERO ============ */
+  .hero {
+    padding: 72px 0 56px;
+    border-bottom: 0.5px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 50% at 70% 20%, var(--teal-glow) 0%, transparent 55%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; }
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: var(--teal);
+  }
+  .hero-eyebrow .sep { color: var(--ink-mute); }
+  .hero-headline {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: clamp(36px, 5vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    max-width: 900px;
+    margin-bottom: 24px;
+  }
+  .hero-headline em {
+    font-style: normal;
+    color: var(--teal);
+    font-weight: 600;
+  }
+  .hero-deck {
+    font-size: 17px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    max-width: 680px;
+    margin-bottom: 40px;
+  }
+
+  /* Hero counter strip */
+  .counters {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 0.5px solid var(--line);
+    border-bottom: 0.5px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .counter {
+    padding: 22px 24px;
+    border-right: 0.5px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .counter:last-child { border-right: none; }
+  .counter .num {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 32px;
+    color: var(--teal);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .counter .lbl {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 4px;
+  }
+
+  /* Hero start CTA row */
+  .hero-cta-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 12px 22px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: inherit;
+  }
+  .btn-primary {
+    background: var(--teal);
+    color: var(--bg);
+    border-color: var(--teal);
+  }
+  .btn-primary:hover {
+    background: var(--teal-bright);
+    border-color: var(--teal-bright);
+    box-shadow: 0 0 24px var(--teal-glow);
+  }
+  .btn-primary:disabled {
+    background: var(--bg-card);
+    color: var(--ink-mute);
+    border-color: var(--line);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+  .btn-ghost {
+    color: var(--ink);
+    border-color: var(--line-bright);
+  }
+  .btn-ghost:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+  }
+
+  /* ============ MAIN APP AREA ============ */
+  main.app {
+    padding: 56px 0 80px;
+  }
+
+  /* Section head, used for the case-id and entry phases */
+  .section-head {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 14px;
+    border-bottom: 0.5px solid var(--line);
+  }
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-tag::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--teal);
+    box-shadow: 0 0 6px var(--teal);
+  }
+  .section-heading {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .section-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    text-align: right;
+  }
+
+  /* Progress bar */
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .progress-section { color: var(--teal); font-weight: 600; }
+  .progress-count { color: var(--ink-faint); }
+  .progress-track {
+    height: 2px;
+    background: var(--line);
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--teal);
+    transition: width 0.35s ease;
+  }
+
+  /* Source tabs */
+  .source-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .source-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .source-tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .source-tab {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: 0.5px solid var(--line);
+    background: var(--bg-card);
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .source-tab:hover { background: var(--bg-card-hover); color: var(--ink); }
+  .source-tab.active {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: var(--teal-tint);
+  }
+  .source-tab.done {
+    border-color: var(--teal-deep);
+    color: var(--teal);
+    background: transparent;
+  }
+  .add-source-btn {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border: 0.5px dashed var(--teal-deep);
+    background: transparent;
+    color: var(--teal);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .add-source-btn:hover { background: var(--teal-tint); border-style: solid; }
+
+  /* Field card, with bracket-corner accent on the active question */
+  .field-card {
+    background: var(--bg-card);
+    border: 1px solid var(--line-bright);
+    padding: 28px 28px 24px;
+    margin-bottom: 16px;
+    position: relative;
+    animation: slideIn 0.25s ease;
+  }
+  .field-card::before,
+  .field-card::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: var(--teal);
+    border-style: solid;
+    pointer-events: none;
+  }
+  .field-card::before {
+    top: -1px;
+    left: -1px;
+    border-width: 1px 0 0 1px;
+  }
+  .field-card::after {
+    bottom: -1px;
+    right: -1px;
+    border-width: 0 1px 1px 0;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .field-label {
+    font-family: var(--sans);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .field-label .req {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 2px 7px;
+    border: 0.5px solid var(--amber);
+    color: var(--amber);
+    background: rgba(232, 157, 60, 0.08);
+  }
+  .field-label .opt {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 2px 7px;
+    border: 0.5px solid var(--line-bright);
+    color: var(--ink-faint);
+  }
+  .field-hint {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+    max-width: 600px;
+  }
+  .field-hint code {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--teal);
+    background: var(--teal-tint);
+    padding: 1px 6px;
+  }
+  .field-hint a {
+    color: var(--teal);
+    border-bottom: 1px solid var(--teal-deep);
+    padding-bottom: 1px;
+  }
+
+  /* Inputs */
+  input[type="text"], input[type="url"], textarea {
+    width: 100%;
+    background: var(--bg-elev);
+    border: 0.5px solid var(--line-bright);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 12px 14px;
+    transition: border-color 0.15s, background 0.15s;
+    outline: none;
+    resize: vertical;
+  }
+  input[type="text"]:focus, input[type="url"]:focus, textarea:focus {
+    border-color: var(--teal);
+    background: var(--bg);
+  }
+  input::placeholder, textarea::placeholder {
+    color: var(--ink-mute);
+  }
+  textarea { min-height: 90px; line-height: 1.5; }
+
+  /* Radio options */
+  .radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .radio-option {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--bg-elev);
+    border: 0.5px solid var(--line);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.4;
+  }
+  .radio-option:hover {
+    border-color: var(--line-bright);
+    background: var(--bg-card-hover);
+    color: var(--ink);
+  }
+  .radio-option.selected {
+    border-color: var(--teal);
+    background: var(--teal-tint);
+    color: var(--ink);
+  }
+  .radio-option input { display: none; }
+  .radio-key {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    color: var(--teal);
+    font-weight: 600;
+    background: var(--bg);
+    border: 0.5px solid var(--teal-deep);
+    padding: 2px 7px;
+    min-width: 22px;
+    text-align: center;
+  }
+  .radio-option.selected .radio-key {
+    background: var(--teal);
+    color: var(--bg);
+    border-color: var(--teal);
+  }
+
+  /* Nav buttons */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 0.5px solid var(--line);
+    gap: 12px;
+  }
+  .nav-row .key-hint {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .nav-row .key-hint kbd {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-faint);
+    border: 0.5px solid var(--line-bright);
+    padding: 1px 5px;
+    margin: 0 2px;
+  }
+
+  /* ============ RESULT PHASE ============ */
+  .result-header {
+    background: var(--bg-card);
+    border: 1px solid var(--line-bright);
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+  .result-header::before,
+  .result-header::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-color: var(--teal);
+    border-style: solid;
+    pointer-events: none;
+  }
+  .result-header::before {
+    top: -1px;
+    left: -1px;
+    border-width: 1px 0 0 1px;
+  }
+  .result-header::after {
+    bottom: -1px;
+    right: -1px;
+    border-width: 0 1px 1px 0;
+  }
+  .result-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .result-eyebrow::before {
+    content: '';
+    width: 18px;
+    height: 1px;
+    background: var(--teal);
+  }
+  .result-title {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: var(--ink);
+    margin-bottom: 14px;
+  }
+  .result-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .result-meta .v { color: var(--ink); }
+
+  /* MIP report frame */
+  .mip-report {
+    background: var(--bg-card);
+    border: 0.5px solid var(--line);
+    margin-bottom: 24px;
+  }
+  .mip-report-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    border-bottom: 0.5px solid var(--line);
+    background: var(--bg-elev);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .mip-report-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--teal);
+    font-weight: 600;
+  }
+  .mip-report-actions { display: flex; gap: 6px; }
+  .action-btn {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    background: transparent;
+    border: 0.5px solid var(--line-bright);
+    color: var(--ink-soft);
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .action-btn:hover {
+    border-color: var(--teal);
+    color: var(--teal);
+    background: var(--teal-tint);
+  }
+  .action-btn.copied {
+    border-color: var(--teal);
+    color: var(--bg);
+    background: var(--teal);
+  }
+
+  .mip-source-block {
+    padding: 22px 24px;
+    border-bottom: 0.5px solid var(--line);
+  }
+  .mip-source-block:last-child { border-bottom: none; }
+  .mip-source-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 0.5px solid var(--line);
+    font-weight: 600;
+  }
+  .mip-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 8px 20px;
+    padding: 6px 0;
+    font-size: 13px;
+    line-height: 1.5;
+    border-bottom: 0.5px dashed var(--line);
+  }
+  .mip-row:last-child { border-bottom: none; }
+  .mip-row.assessment {
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 0.5px solid var(--line);
+    border-bottom: none;
+  }
+  .mip-key {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+  .mip-val { color: var(--ink); word-break: break-word; }
+  .mip-val.flag { color: var(--vermillion); }
+  .mip-val.warn { color: var(--amber); }
+  .mip-val.clear { color: var(--teal); }
+  .mip-val.muted { color: var(--ink-mute); font-style: italic; }
+  .mip-val code, .mip-val.hash {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink);
+  }
+
+  /* Integrity badges, sharp corners */
+  .integrity-badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border: 0.5px solid;
+  }
+  .badge-clear { background: var(--teal-tint); color: var(--teal); border-color: var(--teal-deep); }
+  .badge-amber { background: rgba(232, 157, 60, 0.1); color: var(--amber); border-color: var(--amber); }
+  .badge-flag { background: rgba(209, 66, 66, 0.1); color: var(--vermillion); border-color: var(--vermillion); }
+
+  .reset-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 0.5px solid var(--line);
+  }
+  .reset-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  /* ============ FOOTER ============ */
+  footer.page-foot {
+    border-top: 0.5px solid var(--line);
+    padding: 32px 0;
+    margin-top: 40px;
+    background: var(--bg-elev);
+  }
+  .foot-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    justify-content: center;
+  }
+  .foot-line .accent { color: var(--teal); }
+  .foot-line .sep { color: var(--ink-mute); }
+
+  /* ============ EMBED MODE ============ */
+  /* When embedded in an iframe, hide page chrome so only the tool shows. */
+  body.embed-mode .status-bar,
+  body.embed-mode .hero,
+  body.embed-mode footer.page-foot { display: none; }
+  body.embed-mode main.app { padding: 24px 0 32px; }
+  body.embed-mode { background: transparent; }
+
+  /* ============ PRINT ============ */
+  @media print {
+    .status-bar, .hero, .progress-wrap, .source-nav, .nav-row,
+    .reset-row, .mip-report-actions, footer.page-foot, .field-card,
+    .section-head { display: none !important; }
+    body, html { background: white; color: black; }
+    .mip-report { border: 1px solid #333; }
+    .mip-source-block { border-bottom: 1px solid #ccc; }
+    .mip-key { color: #555; }
+    .mip-val { color: black; }
+    .mip-val.flag { color: #b00; }
+    .mip-val.warn { color: #a50; }
+    .mip-val.clear { color: #060; }
+    .integrity-badge { border: 1px solid #333; color: black; background: white; }
+  }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    .wrap, .narrow { padding: 0 24px; }
+    .hero { padding: 48px 0 36px; }
+    .counters { grid-template-columns: repeat(2, 1fr); }
+    .counter { border-right: none; border-bottom: 0.5px solid var(--line); }
+    .counter:nth-last-child(-n+2) { border-bottom: none; }
+    .counter:nth-child(odd) { border-right: 0.5px solid var(--line); }
+    .section-head { grid-template-columns: 1fr; gap: 8px; }
+    .section-meta { text-align: left; }
+    .mip-row { grid-template-columns: 1fr; gap: 4px; padding: 8px 0; }
+    .mip-key { color: var(--teal); }
+  }
+  @media (max-width: 600px) {
+    .wrap, .narrow { padding: 0 16px; }
+    .field-card { padding: 22px 18px 18px; }
+    .status-bar .row { grid-template-columns: 1fr; gap: 6px; }
+    .status-meta { font-size: 9px; }
+    .mip-source-block { padding: 18px 18px; }
+    .nav-row { flex-direction: column-reverse; align-items: stretch; }
+    .nav-row .btn { justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ STATUS BAR ============ -->
+<section class="status-bar">
+  <div class="wrap row">
+    <span class="status-id">[ S&amp;S / OPS ]</span>
+    <div class="status-meta">
+      <span>SIG-MIP-001</span>
+      <span class="dot-sep">·</span>
+      <span>v1.0</span>
+      <span class="dot-sep">·</span>
+      <span>Verified 2026-05-06</span>
+      <span class="dot-sep">·</span>
+      <span>by DB</span>
+    </div>
+    <div class="status-pulse">
+      <span class="pulse-dot"></span>
+      <span>LIVE</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-eyebrow">
+      <span>Signal &amp; Shadow · Tools</span>
+      <span class="sep">/</span>
+      <span>Media Integrity Protocol</span>
+    </div>
+
+    <h1 class="hero-headline">
+      Structure your media findings. <em>Output a dossier-ready MIP report.</em>
+    </h1>
+
+    <p class="hero-deck">
+      A guided form for the Media Integrity Protocol. Run your ELA, FFT, metadata, codec and C2PA checks in your specialist tools first, then enter the findings here. The Analyser builds a structured, copy-paste-ready report against the SIG-MIP-001 schema.
+    </p>
+
+    <div class="counters">
+      <div class="counter">
+        <span class="num">15</span>
+        <span class="lbl">Fields per source</span>
+      </div>
+      <div class="counter">
+        <span class="num">3</span>
+        <span class="lbl">Sources max</span>
+      </div>
+      <div class="counter">
+        <span class="num">9</span>
+        <span class="lbl">Forensic checks</span>
+      </div>
+      <div class="counter">
+        <span class="num">v1.0</span>
+        <span class="lbl">Schema</span>
+      </div>
+    </div>
+
+    <div class="hero-cta-row">
+      <button class="btn btn-primary" onclick="beginAnalysis()">Begin MIP analysis →</button>
+      <a href="https://signalandshadow.io/verification-standards" class="btn btn-ghost">Read SIG-MIP-001</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ APP AREA ============ -->
+<main class="app">
+  <div class="narrow" id="app">
+    <!-- populated by JS -->
+  </div>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="page-foot">
+  <div class="wrap foot-line">
+    <span class="accent">[ S&amp;S / OPS ]</span>
+    <span class="sep">·</span>
+    <span>SIG-MIP-001 v1.0</span>
+    <span class="sep">·</span>
+    <span>LST-001 v1.0.3</span>
+    <span class="sep">·</span>
+    <span>Versoix, Geneva</span>
+    <span class="sep">·</span>
+    <span>Set in Geist and JetBrains Mono</span>
+  </div>
+</footer>
+
+<script>
+const FIELDS = [
+  {
+    id: 'source',
+    label: 'Source',
+    required: true,
+    hint: 'Name or description of the source. Do not include social media handles in general entries; use the handle field below.',
+    type: 'text',
+    placeholder: 'e.g. Verified government spokesperson, Anonymous social media account, Commercial satellite imagery provider'
+  },
+  {
+    id: 'platform',
+    label: 'Platform',
+    required: true,
+    hint: 'The platform or medium where this media was found or published.',
+    type: 'text',
+    placeholder: 'e.g. Telegram, Twitter/X, marinetraffic.com, Official press release, Direct upload'
+  },
+  {
+    id: 'handle',
+    label: 'Social media handle (if applicable)',
+    required: false,
+    hint: 'If the source is a social media account, record the platform and handle here. This field appears in the MIP table only, never in the general summary.',
+    type: 'text',
+    placeholder: 'e.g. @username on Telegram. Leave blank if not applicable.'
+  },
+  {
+    id: 'link',
+    label: 'Link / URL',
+    required: true,
+    hint: 'Direct URL to the media or source. Archive the URL before entering.',
+    type: 'url',
+    placeholder: 'https://'
+  },
+  {
+    id: 'licence',
+    label: 'Licence',
+    required: false,
+    hint: 'Usage rights for this media, if known.',
+    type: 'radio',
+    options: [
+      { value: 'Public domain', label: 'Public domain' },
+      { value: 'Creative Commons', label: 'Creative Commons' },
+      { value: 'All rights reserved', label: 'All rights reserved' },
+      { value: 'Unknown', label: 'Unknown, not stated' }
+    ]
+  },
+  {
+    id: 'metadata',
+    label: 'File metadata status',
+    required: true,
+    hint: 'Was file metadata available? Use ExifTool or similar to check before entering.',
+    type: 'radio',
+    options: [
+      { value: 'AVAILABLE: metadata present and readable', label: 'Available: metadata present and readable' },
+      { value: 'PARTIAL: some fields present, others absent', label: 'Partial: some fields present, others absent' },
+      { value: 'METADATA STRIPPED BY HOST PLATFORM', label: 'Stripped by host platform' },
+      { value: 'NO FILE: URL only', label: 'No original file, URL only' }
+    ]
+  },
+  {
+    id: 'metadata_detail',
+    label: 'Metadata detail (if available)',
+    required: false,
+    hint: 'Record key metadata findings: camera make and model, GPS coordinates, creation timestamp, software used. Leave blank if metadata was stripped.',
+    type: 'textarea',
+    placeholder: 'e.g. Camera: iPhone 14 Pro. GPS: 48.8566° N, 2.3522° E. Created: 2024-03-15 14:32:07 UTC. Software: Adobe Photoshop 25.0'
+  },
+  {
+    id: 'ela',
+    label: 'Artefact detection: ELA variance',
+    required: true,
+    hint: 'Run Error Level Analysis using Forensically (29a.ch/photo-forensics) or FotoForensics. Record your finding.',
+    type: 'radio',
+    options: [
+      { value: 'No ELA variance detected. Consistent compression throughout.', label: 'No variance detected. Consistent compression throughout.' },
+      { value: 'Minor ELA variance. Within acceptable range for platform re-compression.', label: 'Minor variance. Within range for platform re-compression.' },
+      { value: 'SIGNIFICANT ELA VARIANCE DETECTED. Potential manipulation.', label: 'Significant variance detected. Potential manipulation.' },
+      { value: 'ELA not performed', label: 'ELA not performed' }
+    ]
+  },
+  {
+    id: 'fft',
+    label: 'Artefact detection: FFT inconsistencies',
+    required: true,
+    hint: 'Run FFT (Fast Fourier Transform) analysis. Look for grid patterns indicating splicing or cloning.',
+    type: 'radio',
+    options: [
+      { value: 'No FFT inconsistencies detected', label: 'No inconsistencies detected' },
+      { value: 'Minor FFT anomalies. Inconclusive.', label: 'Minor anomalies. Inconclusive.' },
+      { value: 'FFT GRID PATTERN DETECTED. Splicing or cloning indicated.', label: 'Grid pattern detected. Splicing or cloning indicated.' },
+      { value: 'FFT not performed', label: 'FFT not performed' }
+    ]
+  },
+  {
+    id: 'codec',
+    label: 'Codec fingerprinting',
+    required: false,
+    hint: 'For video: use MediaInfo or ExifTool to identify codec, encoder, and encoding settings. Note any inconsistencies with declared origin.',
+    type: 'textarea',
+    placeholder: 'e.g. H.264, encoded with x264, CRF 23. Consistent with mobile capture. No re-encoding signatures detected.\n\nLeave blank for images, or if not performed.'
+  },
+  {
+    id: 'c2pa',
+    label: 'C2PA Content Credentials status',
+    required: true,
+    hint: 'Check using c2pa.org/verify or c2patool. Record the status.',
+    type: 'radio',
+    options: [
+      { value: 'VALID: Content Credentials present and verified', label: 'Valid: Content Credentials present and verified' },
+      { value: 'STRIPPED: Credentials have been removed', label: 'Stripped: credentials removed' },
+      { value: 'UNSIGNED: No Content Credentials present', label: 'Unsigned: no Content Credentials present' }
+    ]
+  },
+  {
+    id: 'sha256',
+    label: 'SHA-256 hash (Hard Binding)',
+    required: true,
+    hint: 'Generate using <code>sha256sum filename</code> on macOS/Linux, or <code>CertUtil -hashfile filename SHA256</code> on Windows. This is the hard binding for exact file matching.',
+    type: 'text',
+    placeholder: 'e.g. a3f2c1b8d4e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5'
+  },
+  {
+    id: 'phash',
+    label: 'pHash / perceptual hash (Soft Binding)',
+    required: false,
+    hint: 'Generate using ImageMagick (<code>convert image.jpg -format "%#" info:</code>) or an online pHash tool. Used to track visually similar variants.',
+    type: 'text',
+    placeholder: 'e.g. a8f0c1e2b3d4. Leave blank if not generated.'
+  },
+  {
+    id: 'chronological',
+    label: 'Chronological markers',
+    required: false,
+    hint: 'Record any internal chronological indicators: visible clocks, timestamps, shadows, seasonal indicators, news tickers, construction stages, vegetation state.',
+    type: 'textarea',
+    placeholder: 'e.g. Vehicle licence plate visible, consistent with 2023 format. Shadow length consistent with 14:00 to 15:00 local time. Seasonal vegetation consistent with late summer.'
+  },
+  {
+    id: 'integrity_assessment',
+    label: 'Overall integrity assessment',
+    required: true,
+    hint: 'Based on all findings above, what is your overall assessment of this media artefact?',
+    type: 'radio',
+    options: [
+      { value: 'HIGH INTEGRITY: no manipulation indicators detected', label: 'High integrity: no manipulation indicators detected' },
+      { value: 'PROBABLE INTEGRITY: minor anomalies within acceptable range', label: 'Probable integrity: minor anomalies within acceptable range' },
+      { value: 'INTEGRITY UNCERTAIN: anomalies detected, further analysis required', label: 'Integrity uncertain: anomalies detected, further analysis required' },
+      { value: 'LOW INTEGRITY: manipulation indicators present', label: 'Low integrity: manipulation indicators present' },
+      { value: 'INTEGRITY COMPROMISED: manipulation confirmed', label: 'Integrity compromised: manipulation confirmed' }
+    ]
+  }
+];
+
+const TOTAL_FIELDS = FIELDS.length;
+const MAX_SOURCES = 3;
+
+let state = {
+  phase: 'hero',
+  sources: [{}],
+  currentSource: 0,
+  currentField: 0,
+  caseId: ''
+};
+
+function getCurrentSource() { return state.sources[state.currentSource]; }
+function getCurrentField() { return FIELDS[state.currentField]; }
+function totalSources() { return state.sources.length; }
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function escapeAttr(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (state.phase === 'hero') {
+    app.innerHTML = '';
+    return;
+  }
+  if (state.phase === 'case_id') renderCaseId(app);
+  else if (state.phase === 'entry') renderField(app);
+  else if (state.phase === 'result') renderResult(app);
+}
+
+function beginAnalysis() {
+  state.phase = 'case_id';
+  render();
+  setTimeout(() => {
+    document.getElementById('app').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const inp = document.getElementById('caseIdInput');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function renderCaseId(app) {
+  app.innerHTML = `
+    <div class="section-head">
+      <span class="section-tag">Step · 01 / Case identifier</span>
+      <h2 class="section-heading">Open the dossier.</h2>
+      <span class="section-meta">Required to begin</span>
+    </div>
+
+    <div class="field-card">
+      <div class="field-label">Case ID <span class="req">Required</span></div>
+      <div class="field-hint">A short identifier for this dossier. House format: <code>SS-YYYYMMDD-LOCATION</code>. Used to head the report and as the citation anchor.</div>
+      <input type="text" id="caseIdInput" value="${escapeAttr(state.caseId)}" placeholder="e.g. SS-20260506-KYIV" oninput="state.caseId = this.value; toggleProceed(this.value)" onkeydown="if (event.key === 'Enter' && this.value.trim()) startEntry()" />
+    </div>
+
+    <div class="nav-row">
+      <span class="key-hint"><kbd>Enter</kbd> to continue</span>
+      <button class="btn btn-primary" id="proceedBtn" onclick="startEntry()" ${!state.caseId.trim() ? 'disabled' : ''}>Begin field entry →</button>
+    </div>
+  `;
+}
+
+function toggleProceed(val) {
+  const btn = document.getElementById('proceedBtn');
+  if (btn) btn.disabled = !val.trim();
+}
+
+function renderField(app) {
+  const field = getCurrentField();
+  const source = getCurrentSource();
+  const globalProgress = state.currentSource * TOTAL_FIELDS + state.currentField;
+  const totalProgress = totalSources() * TOTAL_FIELDS;
+  const pct = Math.round((globalProgress / totalProgress) * 100);
+
+  let sourceTabs = '';
+  for (let i = 0; i < totalSources(); i++) {
+    const cls = i === state.currentSource ? 'active' : (Object.keys(state.sources[i]).length > 0 ? 'done' : '');
+    sourceTabs += `<button class="source-tab ${cls}" onclick="switchSource(${i})">Source ${i + 1}</button>`;
+  }
+
+  let inputHtml = '';
+  const val = source[field.id] || '';
+
+  if (field.type === 'text' || field.type === 'url') {
+    inputHtml = `<input type="${field.type}" id="fieldInput" value="${escapeAttr(val)}" placeholder="${escapeAttr(field.placeholder)}" oninput="setFieldAndRefresh('${field.id}', this.value)" onpaste="setTimeout(() => setFieldAndRefresh('${field.id}', this.value), 0)" />`;
+  } else if (field.type === 'textarea') {
+    inputHtml = `<textarea id="fieldInput" rows="4" placeholder="${escapeAttr(field.placeholder)}" oninput="setFieldAndRefresh('${field.id}', this.value)" onpaste="setTimeout(() => setFieldAndRefresh('${field.id}', this.value), 0)">${escapeHtml(val)}</textarea>`;
+  } else if (field.type === 'radio') {
+    inputHtml = '<div class="radio-group">' + field.options.map((opt, i) => `
+      <label class="radio-option ${val === opt.value ? 'selected' : ''}" data-value="${escapeAttr(opt.value)}" onclick="selectRadio('${field.id}', this.dataset.value, this)">
+        <span class="radio-key">${String.fromCharCode(65 + i)}</span>
+        <span>${escapeHtml(opt.label)}</span>
+      </label>
+    `).join('') + '</div>';
+  }
+
+  const canProceed = field.required ? (val !== '' && val !== null && val !== undefined) : true;
+  const isLast = state.currentField === TOTAL_FIELDS - 1;
+  const isLastSource = state.currentSource === totalSources() - 1;
+  const isFirst = state.currentField === 0 && state.currentSource === 0;
+
+  app.innerHTML = `
+    <div class="section-head">
+      <span class="section-tag">Step · 02 / Field entry</span>
+      <h2 class="section-heading">${escapeHtml(state.caseId || 'Untitled dossier')}</h2>
+      <span class="section-meta">${pct}% complete</span>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-meta">
+        <span class="progress-section">Source ${state.currentSource + 1} of ${totalSources()}</span>
+        <span class="progress-count">Field ${state.currentField + 1} / ${TOTAL_FIELDS}</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+    </div>
+
+    <div class="source-nav">
+      <span class="source-label">Sources</span>
+      <div class="source-tabs">${sourceTabs}</div>
+      ${totalSources() < MAX_SOURCES ? `<button class="add-source-btn" onclick="addSource()">+ Add source</button>` : ''}
+    </div>
+
+    <div class="field-card">
+      <div class="field-label">
+        ${escapeHtml(field.label)}
+        ${field.required ? '<span class="req">Required</span>' : '<span class="opt">Optional</span>'}
+      </div>
+      <div class="field-hint">${field.hint}</div>
+      ${inputHtml}
+    </div>
+
+    <div class="nav-row">
+      <button class="btn btn-ghost" onclick="prevField()" ${isFirst ? 'disabled' : ''}>← Back</button>
+      <span class="key-hint"><kbd>Enter</kbd> next, <kbd>A-E</kbd> for options</span>
+      <button class="btn btn-primary" id="proceedBtn" onclick="nextField()" ${!canProceed ? 'disabled' : ''}>
+        ${isLast && isLastSource ? 'Generate MIP report →' : 'Next →'}
+      </button>
+    </div>
+  `;
+
+  // Auto-focus the input on each new field
+  setTimeout(() => {
+    const inp = document.getElementById('fieldInput');
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function renderResult(app) {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().slice(0, 5) + ' UTC';
+  const caseId = state.caseId || 'SS-' + dateStr.replace(/-/g, '') + '-UNKNOWN';
+
+  let reportBlocks = '';
+  let plainText = `MEDIA INTEGRITY PROTOCOL (MIP)\n`;
+  plainText += `${'─'.repeat(60)}\n`;
+  plainText += `CASE ID:    ${caseId}\n`;
+  plainText += `GENERATED:  ${dateStr} ${timeStr}\n`;
+  plainText += `SCHEMA:     SIG-MIP-001 v1.0\n`;
+  plainText += `STANDARD:   LST-001 v1.0.3\n`;
+  plainText += `${'─'.repeat(60)}\n\n`;
+
+  state.sources.forEach((source, i) => {
+    const integrity = source.integrity_assessment || 'DATA NOT ACQUIRED';
+    let integrityClass = 'badge-amber';
+    if (integrity.includes('HIGH INTEGRITY') || integrity.includes('PROBABLE')) integrityClass = 'badge-clear';
+    if (integrity.includes('LOW INTEGRITY') || integrity.includes('COMPROMISED')) integrityClass = 'badge-flag';
+
+    const c2paClass = source.c2pa && source.c2pa.startsWith('VALID') ? 'clear'
+      : (source.c2pa && source.c2pa.startsWith('STRIPPED')) ? 'warn'
+      : (source.c2pa && source.c2pa.startsWith('UNSIGNED')) ? 'warn' : '';
+    const metaClass = source.metadata && source.metadata.includes('STRIPPED') ? 'warn' : '';
+    const elaClass = source.ela && source.ela.includes('SIGNIFICANT') ? 'flag'
+      : (source.ela && source.ela.startsWith('No ELA')) ? 'clear' : '';
+    const fftClass = source.fft && source.fft.includes('GRID PATTERN') ? 'flag'
+      : (source.fft && source.fft.startsWith('No FFT')) ? 'clear' : '';
+
+    reportBlocks += `
+      <div class="mip-source-block">
+        <div class="mip-source-label">Source ${i + 1} of ${state.sources.length}</div>
+        ${row('Source', source.source || 'DATA NOT ACQUIRED', source.source ? '' : 'muted')}
+        ${row('Platform', source.platform || 'DATA NOT ACQUIRED', source.platform ? '' : 'muted')}
+        ${source.handle ? row('Social handle', source.handle) : ''}
+        ${row('Link', source.link || 'DATA NOT ACQUIRED', source.link ? '' : 'muted')}
+        ${row('Licence', source.licence || 'Unknown')}
+        ${row('File metadata', source.metadata || 'DATA NOT ACQUIRED', source.metadata ? metaClass : 'muted')}
+        ${source.metadata_detail ? row('Metadata detail', source.metadata_detail) : ''}
+        ${row('ELA variance', source.ela || 'DATA NOT ACQUIRED', source.ela ? elaClass : 'muted')}
+        ${row('FFT inconsistencies', source.fft || 'DATA NOT ACQUIRED', source.fft ? fftClass : 'muted')}
+        ${row('Codec fingerprinting', source.codec || 'Not performed', source.codec ? '' : 'muted')}
+        ${row('C2PA status', source.c2pa || 'DATA NOT ACQUIRED', source.c2pa ? c2paClass : 'muted')}
+        ${row('SHA-256 (Hard Binding)', source.sha256 || 'DATA NOT ACQUIRED', source.sha256 ? 'hash' : 'muted')}
+        ${row('pHash (Soft Binding)', source.phash || 'Not generated', source.phash ? 'hash' : 'muted')}
+        ${row('Chronological markers', source.chronological || 'None recorded', source.chronological ? '' : 'muted')}
+        <div class="mip-row assessment">
+          <div class="mip-key">Integrity assessment</div>
+          <div><span class="integrity-badge ${integrityClass}">${escapeHtml(integrity)}</span></div>
+        </div>
+      </div>
+    `;
+
+    plainText += `SOURCE ${i + 1}\n${'─'.repeat(40)}\n`;
+    plainText += `Source:               ${source.source || 'DATA NOT ACQUIRED'}\n`;
+    plainText += `Platform:             ${source.platform || 'DATA NOT ACQUIRED'}\n`;
+    if (source.handle) plainText += `Social handle:        ${source.handle}\n`;
+    plainText += `Link:                 ${source.link || 'DATA NOT ACQUIRED'}\n`;
+    plainText += `Licence:              ${source.licence || 'Unknown'}\n`;
+    plainText += `File metadata:        ${source.metadata || 'DATA NOT ACQUIRED'}\n`;
+    if (source.metadata_detail) plainText += `Metadata detail:      ${source.metadata_detail}\n`;
+    plainText += `ELA variance:         ${source.ela || 'DATA NOT ACQUIRED'}\n`;
+    plainText += `FFT inconsistencies:  ${source.fft || 'DATA NOT ACQUIRED'}\n`;
+    plainText += `Codec fingerprinting: ${source.codec || 'Not performed'}\n`;
+    plainText += `C2PA status:          ${source.c2pa || 'DATA NOT ACQUIRED'}\n`;
+    plainText += `SHA-256:              ${source.sha256 || 'DATA NOT ACQUIRED'}\n`;
+    plainText += `pHash:                ${source.phash || 'Not generated'}\n`;
+    plainText += `Chronological:        ${source.chronological || 'None recorded'}\n`;
+    plainText += `Integrity assessment: ${integrity}\n\n`;
+  });
+
+  plainText += `${'─'.repeat(60)}\n`;
+  plainText += `Signal & Shadow MIP Analyser, signalandshadow.io\n`;
+  plainText += `Generated: ${dateStr} ${timeStr}\n`;
+  plainText += `Citation:  signalandshadow.io/mip-analyser#${caseId}\n`;
+
+  // Stash on window for the action buttons (avoids the brittle template-string-in-onclick approach)
+  window.__mipPlainText = plainText;
+  window.__mipCaseId = caseId;
+
+  app.innerHTML = `
+    <div class="result-header">
+      <div class="result-eyebrow">Step · 03 / MIP report</div>
+      <h2 class="result-title">Media Integrity Protocol report.</h2>
+      <div class="result-meta">
+        <span>Case <span class="v">${escapeHtml(caseId)}</span></span>
+        <span class="dot-sep">·</span>
+        <span>${state.sources.length} source${state.sources.length > 1 ? 's' : ''}</span>
+        <span class="dot-sep">·</span>
+        <span>Generated <span class="v">${dateStr} ${timeStr}</span></span>
+        <span class="dot-sep">·</span>
+        <span>Schema <span class="v">SIG-MIP-001 v1.0</span></span>
+      </div>
+    </div>
+
+    <div class="mip-report">
+      <div class="mip-report-head">
+        <span class="mip-report-title">Dossier-ready output</span>
+        <div class="mip-report-actions">
+          <button class="action-btn" id="copyBtn" onclick="copyReport()">Copy</button>
+          <button class="action-btn" onclick="downloadReport()">Download .txt</button>
+          <button class="action-btn" onclick="window.print()">Print</button>
+        </div>
+      </div>
+      ${reportBlocks}
+    </div>
+
+    <div class="reset-row">
+      <span class="reset-meta">Citation: signalandshadow.io/mip-analyser#${escapeHtml(caseId)}</span>
+      <button class="btn btn-ghost" onclick="resetAnalyser()">← New analysis</button>
+    </div>
+  `;
+}
+
+function row(key, val, cls = '') {
+  return `
+    <div class="mip-row">
+      <div class="mip-key">${escapeHtml(key)}</div>
+      <div class="mip-val ${cls}">${escapeHtml(val).replace(/\n/g, '<br>')}</div>
+    </div>
+  `;
+}
+
+function setFieldAndRefresh(id, val) {
+  state.sources[state.currentSource][id] = val;
+  const field = getCurrentField();
+  const btn = document.getElementById('proceedBtn');
+  if (btn) {
+    btn.disabled = field.required ? (!val || val.trim() === '') : false;
+  }
+}
+
+function selectRadio(id, val, el) {
+  state.sources[state.currentSource][id] = val;
+  document.querySelectorAll('.radio-option').forEach(e => e.classList.remove('selected'));
+  el.classList.add('selected');
+  const btn = document.getElementById('proceedBtn');
+  if (btn) btn.disabled = false;
+}
+
+function nextField() {
+  const field = getCurrentField();
+  if (field.required && !getCurrentSource()[field.id]) return;
+
+  if (state.currentField < TOTAL_FIELDS - 1) {
+    state.currentField++;
+  } else if (state.currentSource < totalSources() - 1) {
+    state.currentSource++;
+    state.currentField = 0;
+  } else {
+    state.phase = 'result';
+  }
+  render();
+}
+
+function prevField() {
+  if (state.currentField > 0) {
+    state.currentField--;
+  } else if (state.currentSource > 0) {
+    state.currentSource--;
+    state.currentField = TOTAL_FIELDS - 1;
+  }
+  render();
+}
+
+function switchSource(i) {
+  state.currentSource = i;
+  state.currentField = 0;
+  render();
+}
+
+function addSource() {
+  if (state.sources.length < MAX_SOURCES) {
+    state.sources.push({});
+    state.currentSource = state.sources.length - 1;
+    state.currentField = 0;
+    render();
+  }
+}
+
+function startEntry() {
+  if (!state.caseId.trim()) return;
+  state.phase = 'entry';
+  render();
+}
+
+function copyReport() {
+  const text = window.__mipPlainText || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    if (btn) {
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    }
+  }).catch(() => {
+    const btn = document.getElementById('copyBtn');
+    if (btn) btn.textContent = 'Copy failed';
+  });
+}
+
+function downloadReport() {
+  const text = window.__mipPlainText || '';
+  const caseId = window.__mipCaseId || 'mip-report';
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${caseId}.mip.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+}
+
+function resetAnalyser() {
+  state = { phase: 'hero', sources: [{}], currentSource: 0, currentField: 0, caseId: '' };
+  render();
+  document.getElementById('hero').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Keyboard shortcuts: Enter to advance, A-E to pick radio
+document.addEventListener('keydown', (e) => {
+  if (state.phase !== 'entry') return;
+  if (e.target.tagName === 'TEXTAREA') return; // never hijack textareas
+
+  // Enter advances unless focus is on a button (let the button handle it)
+  if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+    const btn = document.getElementById('proceedBtn');
+    if (btn && !btn.disabled) {
+      e.preventDefault();
+      nextField();
+    }
+    return;
+  }
+
+  // A-E for radio options when not typing in a text input
+  if (e.target.tagName !== 'INPUT' && /^[a-eA-E]$/.test(e.key)) {
+    const idx = e.key.toUpperCase().charCodeAt(0) - 65;
+    const opts = document.querySelectorAll('.radio-option');
+    if (opts[idx]) {
+      opts[idx].click();
+      e.preventDefault();
+    }
+  }
+});
+
+// ============ EMBED MODE ============
+// Detect iframe context (or ?embed=1 for testing) and adapt:
+//   - hide page chrome
+//   - skip the hero CTA, drop straight into the case ID prompt
+//   - post height to parent so the iframe can auto-resize
+const isEmbedded = (window.self !== window.top) ||
+  new URLSearchParams(window.location.search).has('embed');
+
+if (isEmbedded) {
+  document.body.classList.add('embed-mode');
+  state.phase = 'case_id';
+}
+
+function postHeightToParent() {
+  if (!isEmbedded || window.parent === window) return;
+  const h = Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.offsetHeight
+  );
+  window.parent.postMessage({ type: 'ss-mip-analyser-height', height: h }, '*');
+}
+
+if (isEmbedded && 'ResizeObserver' in window) {
+  const ro = new ResizeObserver(postHeightToParent);
+  ro.observe(document.body);
+  window.addEventListener('load', postHeightToParent);
+  // Belt-and-braces: also poll, in case ResizeObserver misses a layout shift.
+  setInterval(postHeightToParent, 1000);
+}
+
+render();
+</script>
+
+</body>
+</html>

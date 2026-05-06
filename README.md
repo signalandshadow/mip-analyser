@@ -5,7 +5,7 @@
 A browser-based form for the Media Integrity Protocol. Walks an investigator field-by-field through 15 fields per source (across up to 3 sources), then produces a structured, copy-paste-ready MIP report for dossier inclusion.
 
 Embedded at: https://signalandshadow.io/mip-analyser
-Standalone: https://[username].github.io/[repo-name]/
+Standalone: https://signalandshadow.github.io/mip-analyser/
 
 ## What it does
 
@@ -36,7 +36,7 @@ Hosted on GitHub Pages from the `main` branch root. Any push to `main` triggers 
 
 ## Embed mode
 
-The page detects iframe context automatically. When loaded inside an iframe (or with `?embed=1` for local testing), the status bar, hero, and footer are hidden, leaving only the tool UI. The page also drops directly into the Case ID prompt rather than showing the standalone hero CTA.
+The page detects iframe context automatically. When loaded inside an iframe (or with `?embed=1` for local testing), only the site-wide page footer is hidden. The status bar, hero, and form all stay visible, since the hero is the tool's actual header. The status bar becomes static (rather than sticky) so it scrolls naturally inside the parent page. The page background is set to transparent so the iframe blends with the parent.
 
 The page posts its height to the parent window via `postMessage` with type `ss-mip-analyser-height`, allowing the parent to auto-resize the iframe.
 
@@ -44,7 +44,7 @@ The page posts its height to the parent window via `postMessage` with type `ss-m
 
 ```html
 <iframe
-  src="https://[username].github.io/[repo-name]/?embed=1"
+  src="https://signalandshadow.github.io/mip-analyser/?embed=1"
   style="width: 100%; border: 0; min-height: 800px;"
   id="mip-analyser-frame"
   title="MIP Analyser">

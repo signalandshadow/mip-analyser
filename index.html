@@ -773,12 +773,13 @@
   .foot-line .sep { color: var(--ink-mute); }
 
   /* ============ EMBED MODE ============ */
-  /* When embedded in an iframe, hide page chrome so only the tool shows. */
-  body.embed-mode .status-bar,
-  body.embed-mode .hero,
+  /* When embedded in an iframe, hide only the site-wide page footer.
+     Keep the status bar and the hero (the tool's actual header).
+     The parent page provides its own nav and footer. */
   body.embed-mode footer.page-foot { display: none; }
-  body.embed-mode main.app { padding: 24px 0 32px; }
   body.embed-mode { background: transparent; }
+  /* Status bar inside the iframe should not be sticky, parent page handles scroll */
+  body.embed-mode .status-bar { position: static; }
 
   /* ============ PRINT ============ */
   @media print {
@@ -1471,15 +1472,13 @@ document.addEventListener('keydown', (e) => {
 
 // ============ EMBED MODE ============
 // Detect iframe context (or ?embed=1 for testing) and adapt:
-//   - hide page chrome
-//   - skip the hero CTA, drop straight into the case ID prompt
+//   - apply embed-mode CSS (hides the site footer, transparent bg)
 //   - post height to parent so the iframe can auto-resize
 const isEmbedded = (window.self !== window.top) ||
   new URLSearchParams(window.location.search).has('embed');
 
 if (isEmbedded) {
   document.body.classList.add('embed-mode');
-  state.phase = 'case_id';
 }
 
 function postHeightToParent() {
